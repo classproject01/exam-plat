@@ -17,7 +17,10 @@ exports.Tlogin = (req, res) =>{
             res.render('Tlogin', {
                 message: 'the email is already in use'
             })
-            
+        }else if(password !== confirmpassword){
+            res.render('Tlogin', {
+                message: 'the password does not match'
+            })
         }
     })
     res.send('form is submitted');
