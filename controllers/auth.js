@@ -1,4 +1,7 @@
 const mysql = require('mysql');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
 //define the database
 const db = mysql.createConnection({
     host: process.env.DATABASE_HOST,
@@ -6,26 +9,81 @@ const db = mysql.createConnection({
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE
 });
-exports.Tlogin = (req, res) =>{
+exports.Tlogin = async (req, res) =>{
+    const {fname, lname, email, password, confirmpassword, gender, university, course, birthdate } = req.body;
     console.log(req.body);
-    const { fname, lname, email, password, confirmpassword, gender, university, course, birthdate } = req.body;
-    db.query('SELECT email FROM teachers WHERE email = ?', [email], (error, results) => {
-        if(error){
+    db.query('SELECT email FROM teachers WHERE email = ?', [email], async (error, results) => {
+        if (error) {
             console.log(error);
+            return res.render('Tlogin', { message: 'Database error' });
         }
+    
         if (results.length > 0) {
-            res.render('Tlogin', {
-                message: 'the email is already in use'
-            })
-        }else if(password !== confirmpassword){
-            res.render('Tlogin', {
-                message: 'the password does not match'
-            })
+            return res.render('Tlogin', { message: 'email exists' }); // Return stops the function
         }
-    })
-    res.send('form is submitted');
+    
+        if (password !== confirmpassword) {
+            return res.render('Tlogin', { message: 'passwords do not match' });
+        }
+    
+        // ✅ Only now we continue with hashing and insert
+        const cryptedPasswords = await bcrypt.hash(password, 8);
+    
+        db.query('INSERT INTO teachers SET ?', {
+            prenom: fname,
+            nom: lname,
+            email: email,
+            password: cryptedPasswords,
+            sexe: gender,
+            etablissement: university,
+            filiere: course,
+            birthdate: birthdate
+        }, (error, results) => {
+            if (error) {
+                console.log(error);
+                return res.render('Tlogin', { message: 'Insert failed' });
+            }
+    
+            res.render('Tlogin', { message: 'User Registered' });
+        });
+    });
 }
-exports.Slogin = (req, res) =>{
+exports.Slogin = async (req, res) =>{
+    const {fname, lname, email, password, confirmpassword, gender, university, course, birthdate } = req.body;
     console.log(req.body);
-    res.send('form is submitted');
+    db.query('SELECT email FROM students WHERE email = ?', [email], async (error, results) => {
+        if (error) {
+            console.log(error);
+            return res.render('Slogin', { message: 'Database error' });
+        }
+    
+        if (results.length > 0) {
+            return res.render('Slogin', { message: 'email exists' }); // Return stops the function
+        }
+    
+        if (password !== confirmpassword) {
+            return res.render('Slogin', { message: 'passwords do not match' });
+        }
+    
+        // ✅ Only now we continue with hashing and insert
+        const cryptedPasswords = await bcrypt.hash(password, 8);
+    
+        db.query('INSERT INTO students SET ?', {
+            prenom: fname,
+            nom: lname,
+            email: email,
+            password: cryptedPasswords,
+            sexe: gender,
+            etablissement: university,
+            filiere: course,
+            birthdate: birthdate
+        }, (error, results) => {
+            if (error) {
+                console.log(error);
+                return res.render('Slogin', { message: 'Insert failed' });
+            }
+    
+            res.render('Slogin', { message: 'User Registered' });
+        });
+    });
 }

@@ -67,7 +67,7 @@
               <div class="mb-3">
                 <input
                   type="Password"
-                  name="Password"
+                  name="password"
                   class="form-control form-control-lg"
                   placeholder="Password"
                   required
@@ -77,7 +77,7 @@
               <div class="mb-3">
                 <input
                   type="Password"
-                  name="confirmassword"
+                  name="confirmpassword"
                   class="form-control form-control-lg"
                   placeholder="confirm Password"
                   required
@@ -114,9 +114,9 @@
   <label class="form-label">University</label>
   <select id="university" name="university" class="form-select" required>
     <option value="" selected disabled>Select your university</option>
-    <option value="FS Tetouan">Faculté des Sciences (Tétouan)</option>
-    <option value="Faculté Économie">Faculté d’Économie</option>
-    <option value="Faculté LH">Faculté LH</option>
+    <option value="FS Tetouan">Faculté des Sciences</option>
+    <option value="Faculté Économie">Faculté Économie</option>
+    <option value="Faculté LH">Faculté LH</option>
   </select>
 </div>
 
@@ -137,8 +137,6 @@
                   required
                 />
               </div>
-
-              <!-- role picker  -->
               <!-- submit -->
               <button
                 class="btn btn-primary btn-lg w-100"
@@ -153,6 +151,9 @@
         </div>
       </div>
     </div>
+    {{#if message}}
+  <h4 class="alert alert-danger mt-4">{{message}}</h4>
+  {{/if}}
   </div>
 </section>
 

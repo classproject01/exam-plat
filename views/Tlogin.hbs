@@ -29,7 +29,6 @@
             <h3 class="mb-4 text-center">Sign in</h3>
 
             <!-- *****  FORM  ***** -->
-            <!-- adjust action="/auth/login" (or /register) per your route -->
             <form action="/auth/Tlogin" method="POST">
               <!-- first name -->
               <div class="mb-3">
@@ -67,7 +66,7 @@
               <div class="mb-3">
                 <input
                   type="Password"
-                  name="Password"
+                  name="password"
                   class="form-control form-control-lg"
                   placeholder="Password"
                   required
@@ -77,7 +76,7 @@
               <div class="mb-3">
                 <input
                   type="Password"
-                  name="confirmassword"
+                  name="confirmpassword"
                   class="form-control form-control-lg"
                   placeholder="confirm Password"
                   required
@@ -153,10 +152,10 @@
         </div>
       </div>
     </div>
-  </div>
-  {{#if message}}
+    {{#if message}}
   <h4 class="alert alert-danger mt-4">{{message}}</h4>
   {{/if}}
+  </div>
 </section>
 
 <!-- scripts: jquery (for gijgo) then gijgo date‑picker then bootstrap bundle -->
