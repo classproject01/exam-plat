@@ -9,6 +9,7 @@ const db = mysql.createConnection({
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE
 });
+//registration 
 exports.Tlogin = async (req, res) =>{
     const {fname, lname, email, password, confirmpassword, gender, university, course, birthdate } = req.body;
     console.log(req.body);
@@ -48,6 +49,25 @@ exports.Tlogin = async (req, res) =>{
         });
     });
 }
+//login for the teacher page
+exports.login = (req, res) => {
+    const { email, password } = req.body;
+  
+    db.query('SELECT * FROM teachers WHERE email = ?', [email], async (error, results) => {
+      if (error) {
+        console.log(error);
+        return res.render('Tlogin', { message: 'Database error' });
+      }
+  
+      if (results.length == 0 || !(await bcrypt.compare(password, results[0].password))) {
+        return res.render('Tlogin', { message: 'Incorrect email or password' });
+      }
+  
+      // Success - redirect wherever you want
+      res.render('/Tdashboard'); 
+    });
+  };
+ //Registration for students 
 exports.Slogin = async (req, res) =>{
     const {fname, lname, email, password, confirmpassword, gender, university, course, birthdate } = req.body;
     console.log(req.body);

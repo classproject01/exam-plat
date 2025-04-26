@@ -16,7 +16,7 @@ const db = mysql.createConnection({
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE
 });
-//connect the database
+//error 
 db.connect((error) => {
 if(error){
     console.log(error);

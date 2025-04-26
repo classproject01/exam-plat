@@ -10,4 +10,7 @@ router.get('/Slogin', (req, res) => {
   router.get('/Tlogin', (req, res) => {
     res.render('Tlogin');
   });
+  router.get('/Tdashboard', (req, res) => {
+    res.render('Tdashboard');
+  });
   module.exports = router;
