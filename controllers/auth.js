@@ -1,7 +1,8 @@
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
-
+ 
 //define the database
 const db = mysql.createConnection({
     host: process.env.DATABASE_HOST,
@@ -45,7 +46,7 @@ exports.Tlogin = async (req, res) =>{
                 return res.render('Tlogin', { message: 'Insert failed' });
             }
     
-            res.render('Tlogin', { message: 'User Registered' });
+            res.render('Tlogin', { message: 'User Registered. Now login please!' });
         });
     });
 }
@@ -62,11 +63,25 @@ exports.login = (req, res) => {
       if (results.length == 0 || !(await bcrypt.compare(password, results[0].password))) {
         return res.render('Tlogin', { message: 'Incorrect email or password' });
       }
+      const teacher = results[0];
+      const token = jwt.sign({ id: teacher.id }, process.env.JWT_SECRET, {
+        expiresIn: '90d'
+      });
+      res.cookie('jwt', token, {
+        httpOnly: true,     // prevents JavaScript access
+        secure: false,      // set to true if using HTTPS
+        maxAge: 90 * 24 * 60 * 60 * 1000  // 90 days
+      });
   
       // Success - redirect wherever you want
-      res.render('/Tdashboard'); 
+      res.render('Tdashboard'); 
     });
   };
+ //logout for teachers
+ exports.Tlogout =  (req, res) => {
+    res.clearCookie('jwt');
+    res.redirect('/Tlogin');
+  }; 
  //Registration for students 
 exports.Slogin = async (req, res) =>{
     const {fname, lname, email, password, confirmpassword, gender, university, course, birthdate } = req.body;
@@ -107,3 +122,21 @@ exports.Slogin = async (req, res) =>{
         });
     });
 }
+//login for students
+exports.signin = (req, res) => {
+    const { email, password } = req.body;
+  
+    db.query('SELECT * FROM students WHERE email = ?', [email], async (error, results) => {
+      if (error) {
+        console.log(error);
+        return res.render('Slogin', { message: 'Database error' });
+      }
+  
+      if (results.length == 0 || !(await bcrypt.compare(password, results[0].password))) {
+        return res.render('Slogin', { message: 'Incorrect email or password' });
+      }
+  
+      // Success - redirect wherever you want
+      res.render('Tdashboard'); 
+    });
+  };

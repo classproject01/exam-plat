@@ -3,161 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Sign up / Login</title>
 
-  <!-- Bootstrap 5 CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-
-  <!-- Gijgo date‑picker -->
-  <link
-    href="https://unpkg.com/gijgo@1.9.14/css/gijgo.min.css"
-    rel="stylesheet"
-  />
-
-  <title>Sign up</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/gijgo@1.9.14/css/gijgo.min.css" rel="stylesheet" />
 </head>
+
 <body>
-<section class="vh-120" style="background-color:#e2e474">
+<section class="vh-120" style="background-color:#839dce">
   <div class="container py-5 h-100">
     <div class="row justify-content-center align-items-center h-100">
       <div class="col-md-8 col-lg-6 col-xl-5">
         <div class="card shadow" style="border-radius:1rem">
           <div class="card-body p-5">
 
-            <h3 class="mb-4 text-center">Sign in</h3>
+            <h3 class="mb-4 text-center">Sign up (Student)</h3>
 
-            <!-- *****  FORM  ***** -->
-            <!-- adjust action="/auth/login" (or /register) per your route -->
+            <!-- FORM -->
             <form action="/auth/Slogin" method="POST">
+              {{#if message}}
+                <h4 class="alert alert-danger mt-4">{{message}}</h4>
+              {{/if}}
+
               <!-- first name -->
               <div class="mb-3">
-                <input
-                  type="text"
-                  name="fname"
-                  class="form-control form-control-lg"
-                  placeholder="First name"
-                  required
-                />
+                <input type="text" name="fname" class="form-control" placeholder="First name" required />
               </div>
 
               <!-- last name -->
               <div class="mb-3">
-                <input
-                  type="text"
-                  name="lname"
-                  class="form-control form-control-lg"
-                  placeholder="Last name"
-                  required
-                />
+                <input type="text" name="lname" class="form-control" placeholder="Last name" required />
               </div>
 
               <!-- email -->
               <div class="mb-3">
-                <input
-                  type="email"
-                  name="email"
-                  class="form-control form-control-lg"
-                  placeholder="Email"
-                  required
-                />
+                <input type="email" name="email" class="form-control" placeholder="Email" required />
               </div>
-              <!-- Password -->
+
+              <!-- password -->
               <div class="mb-3">
-                <input
-                  type="Password"
-                  name="password"
-                  class="form-control form-control-lg"
-                  placeholder="Password"
-                  required
-                />
+                <input type="password" name="password" class="form-control" placeholder="Password" required />
               </div>
-              <!-- confirmPassword -->
+
+              <!-- confirm password -->
               <div class="mb-3">
-                <input
-                  type="Password"
-                  name="confirmpassword"
-                  class="form-control form-control-lg"
-                  placeholder="confirm Password"
-                  required
-                />
+                <input type="password" name="confirmpassword" class="form-control" placeholder="Confirm Password" required />
               </div>
 
               <!-- gender -->
               <div class="mb-3">
-                <label class="form-label d-block mb-1">Gender</label>
+                <label class="form-label d-block">Gender</label>
                 <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="gender"
-                    value="male"
-                    required
-                  />
+                  <input class="form-check-input" type="radio" name="gender" value="male" required />
                   <label class="form-check-label">Male</label>
                 </div>
                 <div class="form-check form-check-inline">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="gender"
-                    value="female"
-                  />
+                  <input class="form-check-input" type="radio" name="gender" value="female" />
                   <label class="form-check-label">Female</label>
                 </div>
               </div>
 
-             
-              <!-- UNIVERSITY -->
-<div class="mb-3">
-  <label class="form-label">University</label>
-  <select id="university" name="university" class="form-select" required>
-    <option value="" selected disabled>Select your university</option>
-    <option value="FS Tetouan">Faculté des Sciences</option>
-    <option value="Faculté Économie">Faculté Économie</option>
-    <option value="Faculté LH">Faculté LH</option>
-  </select>
-</div>
-
-<!-- COURSES (hidden until a university is chosen) -->
-<div id="course-wrapper" class="mb-4 d-none">
-  <label class="form-label">Course</label>
-  <select id="course" name="course" class="form-select" required></select>
-</div>
-
-
-              <!-- birth date -->
-              <div class="mb-4">
-                <input
-                  id="datepicker"
-                  name="birthdate"
-                  placeholder="Date of birth"
-                  class="form-control form-control-lg"
-                  required
-                />
+              <!-- university -->
+              <div class="mb-3">
+                <label class="form-label">University</label>
+                <select id="university" name="university" class="form-select" required>
+                  <option value="" selected disabled>Select your university</option>
+                  <option value="FS Tetouan">Faculté des Sciences (Tétouan)</option>
+                  <option value="Faculté Économie">Faculté d’Économie</option>
+                  <option value="Faculté LH">Faculté LH</option>
+                </select>
               </div>
-              <!-- submit -->
-              <button
-                class="btn btn-primary btn-lg w-100"
-                type="submit"
-              >
-               Register
-              </button>
+
+              <!-- course -->
+              <div id="course-wrapper" class="mb-3 d-none">
+                <label class="form-label">Course</label>
+                <select id="course" name="course" class="form-select" required></select>
+              </div>
+
+              <!-- birthdate -->
+              <div class="mb-4">
+                <input id="datepicker" name="birthdate" placeholder="Date of birth" class="form-control" required />
+              </div>
+
+              <!-- Register button -->
+              <button class="btn btn-primary w-100 mb-2" type="submit">Register</button>
             </form>
-            <!-- *****  /FORM  ***** -->
+
+            <!-- login trigger button -->
+            <button class="btn btn-secondary w-100" data-bs-toggle="modal" data-bs-target="#loginModal">
+              Already have an account? Login
+            </button>
 
           </div>
         </div>
       </div>
     </div>
-    {{#if message}}
-  <h4 class="alert alert-danger mt-4">{{message}}</h4>
-  {{/if}}
   </div>
 </section>
 
-<!-- scripts: jquery (for gijgo) then gijgo date‑picker then bootstrap bundle -->
+<!-- LOGIN MODAL -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/auth/signin" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginModalLabel">Login</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <input type="email" name="email" class="form-control" placeholder="Email" required />
+          </div>
+          <div class="mb-3">
+            <input type="password" name="password" class="form-control" placeholder="Password" required />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary w-100">Login</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://unpkg.com/gijgo@1.9.14/js/gijgo.min.js"></script>
 <script>
@@ -165,5 +137,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/scripts/script.js"></script>
+</body>
+
 </body>
 </html>

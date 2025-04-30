@@ -2,12 +2,16 @@ const express = require('express');
 const path = require('path');
 const mysql = require('mysql');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+
 const app = express();
 dotenv.config({path: './.env'});
 const publicDirectory = path.join(__dirname, './public');
 app.use(express.static(publicDirectory));
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
+app.use(cookieParser());
 app.set('view engine', 'hbs');
 //define the database
 const db = mysql.createConnection({
