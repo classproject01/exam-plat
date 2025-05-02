@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://unpkg.com/gijgo@1.9.14/css/gijgo.min.css" rel="stylesheet" />
 </head>
-<body style="background-color: #c4f5ed;">
+<body style="background-color: #050505;">
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Examify</a>
@@ -20,24 +20,26 @@
           <a class="nav-link active" aria-current="page" href="#">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/examcreate">Workspace</a>
+          <a class="nav-link" href="#">Link</a>
         </li>
-        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Dropdown
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Action</a></li>
+            <li><a class="dropdown-item" href="#">Another action</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </li>
       </ul>
-      <form action="/auth/Tlogout" method="post" class="d-flex" role="logout">
+      <form action="/auth/Slogout" method="post" class="d-flex" role="logout">
         <button class="btn btn-outline-success" type="submit">Logout</button>
       </form>
     </div>
   </div>
 </nav>
-</div>
-
-<h1 style="text-align: center;">Welcome to Examify</h1>
-<h2 style="width: 100%;height:10vh;background-color:rgb(235, 124, 124);color:white;text-align:center;">{{notification}}</h2>
-<div class="container rounded border border-success p-2 mb-2 h-180">
-<h2 style="width: 100%;height:10vh;background-color:rgb(235, 124, 124);color:white;text-align:center;">link:{{link}}</h2>
-</div>
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
 </body>

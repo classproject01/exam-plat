@@ -14,4 +14,10 @@ router.get('/Slogin', (req, res) => {
   router.get('/Tdashboard', isAuthenticated, (req, res) => {
     res.render('Tdashboard', { user: req.user }); // Optional: use `req.user.id` to fetch user-specific info
   });
+  router.get('/examcreate', isAuthenticated, (req, res) => {
+    res.render('examcreate', { user: req.user }); // Optional: use `req.user.id` to fetch user-specific info
+  });
+  router.get('/Sdashboard', isAuthenticated, (req, res) => {
+    res.render('Sdashboard', { user: req.user }); // Optional: use `req.user.id` to fetch user-specific info
+  });
   module.exports = router;

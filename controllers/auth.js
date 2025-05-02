@@ -74,7 +74,7 @@ exports.login = (req, res) => {
       });
   
       // Success - redirect wherever you want
-      res.render('Tdashboard'); 
+      res.render('Tdashboard', {teachername: teacher.prenom}); 
     });
   };
  //logout for teachers
@@ -136,7 +136,51 @@ exports.signin = (req, res) => {
         return res.render('Slogin', { message: 'Incorrect email or password' });
       }
   
+      const student = results[0];
+      const token = jwt.sign({ id: student.id }, process.env.JWT_SECRET, {
+        expiresIn: '90d'
+      });
+      res.cookie('jwt', token, {
+        httpOnly: true,     // prevents JavaScript access
+        secure: false,      // set to true if using HTTPS
+        maxAge: 90 * 24 * 60 * 60 * 1000  // 90 days
+      });
+  
       // Success - redirect wherever you want
-      res.render('Tdashboard'); 
+      res.render('Sdashboard'); 
     });
   };
+  //logout for students
+  exports.Slogout =  (req, res) => {
+    res.clearCookie('jwt');
+    res.redirect('/Slogin');
+  };
+  //Insert the exam to database
+  exports.examcreate = (req, res) => {
+    const { title, type, questions, option1, option2, option3, option4, correct } = req.body;
+    const mediaFiles = req.files; // if using multer
+
+    db.query('INSERT INTO exams SET ?', { titre: title, type: type, teacher_id: req.user.id }, (err, examResult) => {
+        if (err) { console.log(err); return res.send('DB error'); }
+
+        const examId = examResult.insertId;
+
+        // Insert questions
+        for (let i = 0; i < questions.length; i++) {
+            db.query('INSERT INTO questions SET ?', {
+                exam_id: examId,
+                question_text: questions[i],
+                option_1: option1[i] || null,
+                option_2: option2[i] || null,
+                option_3: option3[i] || null,
+                option_4: option4[i] || null,
+                correct_answer: correct[i] || null,
+                media_path: mediaFiles[i] ? mediaFiles[i].path : null
+            });
+        }
+
+        // generate a shareable link
+        const shareLink = `/exam/${examId}`;
+        res.render('Tdashboard', { notification: 'Exam created!', link: shareLink });
+    });
+}
