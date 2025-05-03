@@ -11,9 +11,18 @@ router.get('/Slogin', (req, res) => {
   router.get('/Tlogin', (req, res) => {
     res.render('Tlogin');
   });
-  router.get('/Tdashboard', isAuthenticated, (req, res) => {
-    res.render('Tdashboard', { user: req.user }); // Optional: use `req.user.id` to fetch user-specific info
+const { db } = require('../controllers/auth');
+
+router.get('/Tdashboard', isAuthenticated, (req, res) => {
+  const teacher = req.user;
+  db.query('SELECT * FROM exams WHERE teacher_id = ?', [teacher.id], (err, exams) => {
+    if (err) {
+      console.log(err);
+      return res.render('Tdashboard', { teachername: teacher.prenom, exams: [] });
+    }
+    res.render('Tdashboard', { teachername: teacher.prenom, exams: exams });
   });
+});
   router.get('/examcreate', isAuthenticated, (req, res) => {
     res.render('examcreate', { user: req.user }); // Optional: use `req.user.id` to fetch user-specific info
   });

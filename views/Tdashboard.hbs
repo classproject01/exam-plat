@@ -32,13 +32,44 @@
 </nav>
 </div>
 
-<h1 style="text-align: center;">Welcome to Examify</h1>
-<h2 style="width: 100%;height:10vh;background-color:rgb(235, 124, 124);color:white;text-align:center;">{{notification}}</h2>
-<div class="container rounded border border-success p-2 mb-2 h-180">
-<h2 style="width: 100%;height:10vh;background-color:rgb(235, 124, 124);color:white;text-align:center;">link:{{link}}</h2>
+<h1 style="text-align: center;">Welcome to Examify Mr.{{teachername}}</h1>
+{{#if notification}}<h2 style="width: 100%;height:10vh;background-color:rgb(235, 124, 124);color:white;text-align:center;">{{notification}}</h2>{{/if}}
+<div class="container rounded ">
+{{#if link}}<h4 class="rounded" style="width: 100%;height:10vh;background-color:rgb(149, 233, 184);color:white;text-align:center;">link:{{link}}</h4>{{/if}}
+
+{{#if exams}}
+  <h3>Your Exams</h3>
+  <ul class="list-group">
+    {{#each exams}}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <strong>Title:</strong> {{this.titre}} <br>
+          <strong>Type:</strong> {{this.type}}<br>
+          <strong>Exam link:</strong> 
+          <input type="text" class="form-control d-inline-block" style="width: auto; max-width: 300px;" value="{{this.shareLink}}" id="link-{{@index}}" readonly>
+          <button class="btn btn-outline-secondary btn-sm" onclick="copyLink('link-{{@index}}')">Copy</button>
+        </div>
+        <div>
+          <a href="{{this.shareLink}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Exam</a>
+        </div>
+      </li>
+    {{/each}}
+  </ul>
+{{else}}
+  <h3 style="text-align: center;">No exams found.</h3>
+{{/if}}
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function copyLink(elementId) {
+  var copyText = document.getElementById(elementId);
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); // For mobile devices
+  document.execCommand("copy");
+  alert("Copied the link: " + copyText.value);
+}
+</script>
 </body>
 </html>

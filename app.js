@@ -5,14 +5,16 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
+const multer = require('multer');
 
 const app = express();
 dotenv.config({path: './.env'});
 const publicDirectory = path.join(__dirname, './public');
 app.use(express.static(publicDirectory));
-app.use(express.urlencoded({extended: false}));
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: true}));
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(cookieParser());
 app.set('view engine', 'hbs');
 //define the database

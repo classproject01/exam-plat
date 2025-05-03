@@ -72,9 +72,16 @@ exports.login = (req, res) => {
         secure: false,      // set to true if using HTTPS
         maxAge: 90 * 24 * 60 * 60 * 1000  // 90 days
       });
-  
-      // Success - redirect wherever you want
-      res.render('Tdashboard', {teachername: teacher.prenom}); 
+
+      // Fetch exams for the teacher
+      db.query('SELECT * FROM exams WHERE teacher_id = ?', [teacher.id], (err, exams) => {
+        if (err) {
+          console.log(err);
+          return res.render('Tdashboard', { teachername: teacher.prenom, exams: [] });
+        }
+        // Success - render dashboard with exams
+        res.render('Tdashboard', { teachername: teacher.prenom, exams: exams });
+      });
     });
   };
  //logout for teachers
@@ -102,7 +109,7 @@ exports.Slogin = async (req, res) =>{
     
         // ✅ Only now we continue with hashing and insert
         const cryptedPasswords = await bcrypt.hash(password, 8);
-    
+
         db.query('INSERT INTO students SET ?', {
             prenom: fname,
             nom: lname,
@@ -156,12 +163,15 @@ exports.signin = (req, res) => {
     res.redirect('/Slogin');
   };
   //Insert the exam to database
-  exports.examcreate = (req, res) => {
+exports.examcreate = (req, res) => {
     const { title, type, questions, option1, option2, option3, option4, correct } = req.body;
     const mediaFiles = req.files; // if using multer
 
     db.query('INSERT INTO exams SET ?', { titre: title, type: type, teacher_id: req.user.id }, (err, examResult) => {
-        if (err) { console.log(err); return res.send('DB error'); }
+        if (err) { 
+            console.log(err); 
+            return res.send('DB error'); 
+        }
 
         const examId = examResult.insertId;
 
@@ -175,12 +185,20 @@ exports.signin = (req, res) => {
                 option_3: option3[i] || null,
                 option_4: option4[i] || null,
                 correct_answer: correct[i] || null,
-                media_path: mediaFiles[i] ? mediaFiles[i].path : null
+                media_path: mediaFiles[i] ? mediaFiles[i].path : ''
             });
         }
 
         // generate a shareable link
         const shareLink = `/exam/${examId}`;
-        res.render('Tdashboard', { notification: 'Exam created!', link: shareLink });
+
+        // Fetch exams for the teacher after insertion
+        db.query('SELECT * FROM exams WHERE teacher_id = ?', [req.user.id], (err, exams) => {
+            if (err) {
+                console.log(err);
+                return res.render('Tdashboard', { teachername: req.user.prenom, exams: [], notification: 'Exam created!', link: shareLink });
+            }
+            res.render('Tdashboard', { teachername: req.user.prenom, exams: exams, notification: 'Exam created!', link: shareLink });
+        });
     });
 }
