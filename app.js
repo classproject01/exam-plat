@@ -16,7 +16,18 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
+const hbs = require('hbs');
+
 app.set('view engine', 'hbs');
+
+// Register Handlebars helpers
+hbs.registerHelper('inc', function(value) {
+  return parseInt(value) + 1;
+});
+
+hbs.registerHelper('eq', function(a, b) {
+  return a === b;
+});
 //define the database
 const db = mysql.createConnection({
     host: process.env.DATABASE_HOST,

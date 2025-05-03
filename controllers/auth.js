@@ -79,6 +79,10 @@ exports.login = (req, res) => {
           console.log(err);
           return res.render('Tdashboard', { teachername: teacher.prenom, exams: [] });
         }
+        // Add shareLink property to each exam
+        exams.forEach(exam => {
+          exam.shareLink = `/exam/${exam.id}`;
+        });
         // Success - render dashboard with exams
         res.render('Tdashboard', { teachername: teacher.prenom, exams: exams });
       });
@@ -164,10 +168,10 @@ exports.signin = (req, res) => {
   };
   //Insert the exam to database
 exports.examcreate = (req, res) => {
-    const { title, type, questions, option1, option2, option3, option4, correct } = req.body;
+    const { title, duration, type, questions, option1, option2, option3, option4, correct } = req.body;
     const mediaFiles = req.files; // if using multer
 
-    db.query('INSERT INTO exams SET ?', { titre: title, type: type, teacher_id: req.user.id }, (err, examResult) => {
+    db.query('INSERT INTO exams SET ?', { titre: title, type: type, teacher_id: req.user.id, duration: duration }, (err, examResult) => {
         if (err) { 
             console.log(err); 
             return res.send('DB error'); 
@@ -190,15 +194,9 @@ exports.examcreate = (req, res) => {
         }
 
         // generate a shareable link
-        const shareLink = `/exam/${examId}`;
+        const shareLink = `localhost:5000/exam/${examId}`;
 
-        // Fetch exams for the teacher after insertion
-        db.query('SELECT * FROM exams WHERE teacher_id = ?', [req.user.id], (err, exams) => {
-            if (err) {
-                console.log(err);
-                return res.render('Tdashboard', { teachername: req.user.prenom, exams: [], notification: 'Exam created!', link: shareLink });
-            }
-            res.render('Tdashboard', { teachername: req.user.prenom, exams: exams, notification: 'Exam created!', link: shareLink });
-        });
+        // Redirect to Tdashboard with query params for notification and link
+        res.redirect(`/Tdashboard?notification=Exam created!&link=${encodeURIComponent(shareLink)}`);
     });
 }
