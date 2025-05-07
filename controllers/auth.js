@@ -64,7 +64,7 @@ exports.login = (req, res) => {
         return res.render('Tlogin', { message: 'Incorrect email or password' });
       }
       const teacher = results[0];
-      const token = jwt.sign({ id: teacher.id }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: teacher.id, prenom: teacher.prenom }, process.env.JWT_SECRET, {
         expiresIn: '90d'
       });
       res.cookie('jwt', token, {
@@ -148,7 +148,7 @@ exports.signin = (req, res) => {
       }
   
       const student = results[0];
-      const token = jwt.sign({ id: student.id }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: student.id, prenom: student.prenom }, process.env.JWT_SECRET, {
         expiresIn: '90d'
       });
       res.cookie('jwt', token, {
@@ -158,7 +158,7 @@ exports.signin = (req, res) => {
       });
   
       // Success - redirect wherever you want
-      res.render('Sdashboard'); 
+      res.render('Sdashboard', {studentName: student.prenom}); 
     });
   };
   //logout for students
@@ -200,3 +200,21 @@ exports.examcreate = (req, res) => {
         res.redirect(`/Tdashboard?notification=Exam created!&link=${encodeURIComponent(shareLink)}`);
     });
 }
+exports.submitExam = (req, res) => {
+  const examId = req.params.examId;
+  const answers = JSON.stringify(req.body.answers); // Make sure answers are structured like answers[questionId]
+  const studentName = req.body.studentName || 'Anonymous'; // You can pass this from a hidden input or session
+
+  const sql = `
+    INSERT INTO student_answers (student_name, exam_id, answers)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [studentName, examId, answers], (err, result) => {
+    if (err) {
+      console.error('Error saving answers:', err);
+      return res.status(500).send('Server error');
+    }
+    res.send('Answers submitted successfully!');
+  });
+};

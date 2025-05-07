@@ -46,7 +46,7 @@
           <strong>Title:</strong> {{this.titre}} <br>
           <strong>Type:</strong> {{this.type}}<br>
           <strong>Exam link:</strong> 
-          <input type="text" class="form-control d-inline-block" style="width: auto; max-width: 300px;" value="{{this.shareLink}}" id="link-{{@index}}" readonly>
+          <input type="text" class="form-control d-inline-block" style="width: auto; max-width: 300px;" value="localhost:5000{{this.shareLink}}" id="link-{{@index}}" readonly>
           <button class="btn btn-outline-secondary btn-sm" onclick="copyLink('link-{{@index}}')">Copy</button>
         </div>
         <div>

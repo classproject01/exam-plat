@@ -1,53 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Exam</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    /* Blur effect initially */
+    #exam-content.blurry {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
+    #start-button {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+    #timer {
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      font-weight: bold;
+      font-size: 1.25rem;
+      z-index: 1000;
+    }
+  </style>
 </head>
 <body>
-  <div class="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-10">
-  <h2 class="text-2xl font-bold mb-4 text-center">{{exam.title}}</h2>
-  <p class="text-gray-600 mb-6 text-center">Type: <span class="font-medium">{{exam.type}}</span></p>
+  <button id="start-button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl shadow-md transition duration-200">
+    Start
+  </button>
+  <div id="timer" style="display:none;">00:00</div>
 
-  <form action="/submit-exam/{{exam.id}}" method="POST" class="space-y-6">
-    {{#each questions}}
+  <div id="exam-content" class="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-10 blurry">
+    <h2 class="text-2xl font-bold mb-4 text-center">{{exam.titre}}</h2>
+    <p class="text-gray-600 mb-6 text-center">Type: <span class="font-medium">{{exam.type}}</span></p>
+
+    <form id="exam-form" action="/submit-exam/{{exam.id}}" method="POST" class="space-y-6">
+      <input type="hidden" name="studentName" value="{{studentName}}" />
+      {{#each questions}}
       <div class="border-b pb-4">
         <p class="font-semibold text-gray-800 mb-2">Q{{inc @index}}: {{this.question_text}}</p>
+        <p><small>Media path: {{this.media_path}}</small></p>
+
+        {{#if this.media_path}}
+          {{#if (or (endsWith this.media_path ".jpg") (endsWith this.media_path ".jpeg") (endsWith this.media_path ".png") (endsWith this.media_path ".gif"))}}
+          <img src="/{{fixPath this.media_path}}" alt="Question media" class="mb-2 max-w-full h-auto rounded-md" />
+          {{else if (or (endsWith this.media_path ".mp4") (endsWith this.media_path ".webm") (endsWith this.media_path ".ogg"))}}
+            <video controls class="mb-2 max-w-full rounded-md">
+              <source src="/{{fixPath this.media_path}}" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          {{/if}}
+        {{/if}}
 
         {{#if (eq ../exam.type 'QCM')}}
           <div class="space-y-2">
             <label class="flex items-center space-x-2">
-              <input type="radio" name="answers[{{this.id}}]" value="{{this.option1}}" class="form-radio text-blue-600">
-              <span>{{this.option1}}</span>
+              <input type="radio" name="answers[{{this.id}}]" value="{{this.option_1}}" class="form-radio text-blue-600" />
+              <span>{{this.option_1}}</span>
             </label>
             <label class="flex items-center space-x-2">
-              <input type="radio" name="answers[{{this.id}}]" value="{{this.option2}}" class="form-radio text-blue-600">
-              <span>{{this.option2}}</span>
+              <input type="radio" name="answers[{{this.id}}]" value="{{this.option_2}}" class="form-radio text-blue-600" />
+              <span>{{this.option_2}}</span>
             </label>
             <label class="flex items-center space-x-2">
-              <input type="radio" name="answers[{{this.id}}]" value="{{this.option3}}" class="form-radio text-blue-600">
-              <span>{{this.option3}}</span>
+              <input type="radio" name="answers[{{this.id}}]" value="{{this.option_3}}" class="form-radio text-blue-600" />
+              <span>{{this.option_3}}</span>
             </label>
             <label class="flex items-center space-x-2">
-              <input type="radio" name="answers[{{this.id}}]" value="{{this.option4}}" class="form-radio text-blue-600">
-              <span>{{this.option4}}</span>
+              <input type="radio" name="answers[{{this.id}}]" value="{{this.option_4}}" class="form-radio text-blue-600" />
+              <span>{{this.option_4}}</span>
             </label>
           </div>
         {{else}}
           <textarea name="answers[{{this.id}}]" rows="4" class="w-full mt-2 border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
         {{/if}}
       </div>
-    {{/each}}
+      {{/each}}
 
-    <div class="text-center">
-      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl shadow-md transition duration-200">
-        Submit
-      </button>
-    </div>
-  </form>
-</div>
+      <div class="text-center">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl shadow-md transition duration-200">
+          Submit
+        </button>
+      </div>
+    </form>
+  </div>
 
+  <script>
+    (function() {
+      const startButton = document.getElementById('start-button');
+      const timerDisplay = document.getElementById('timer');
+      const examContent = document.getElementById('exam-content');
+      const examForm = document.getElementById('exam-form');
+
+      // Placeholder duration in minutes - replace with actual duration from backend
+      const examDurationMinutes = {{exam.duration}};
+      let timeLeft = examDurationMinutes * 60; // seconds
+      let timerInterval = null;
+
+      function formatTime(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      function updateTimer() {
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          // Auto-submit the form or save answers and redirect
+          alert('Time is up! Your answers will be submitted.');
+          examForm.submit();
+          return;
+        }
+        timerDisplay.textContent = formatTime(timeLeft);
+        timeLeft--;
+      }
+
+      startButton.addEventListener('click', function() {
+        // Remove blur and disable start button
+        examContent.classList.remove('blurry');
+        startButton.style.display = 'none';
+        timerDisplay.style.display = 'block';
+
+        // Start timer
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+      });
+    })();
+  </script>
 </body>
 </html>

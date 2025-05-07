@@ -12,6 +12,8 @@ router.post('/Tlogout', authController.Tlogout);
 router.post('/Slogin', authController.Slogin);
 router.post('/signin', authController.signin);
 router.post('/Slogout', authController.Slogout);
-router.post('/examcreate', isAuthenticated, upload.array('media'), authController.examcreate);
+router.post('/submit-exam/:examId', authController.submitExam);
+// Change multer middleware to accept any file fields for debugging
+router.post('/examcreate', isAuthenticated, upload.any(), authController.examcreate);
 
   module.exports = router;

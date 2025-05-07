@@ -11,6 +11,9 @@ const app = express();
 dotenv.config({path: './.env'});
 const publicDirectory = path.join(__dirname, './public');
 app.use(express.static(publicDirectory));
+
+// Serve uploads directory as static to serve uploaded media files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -27,6 +30,25 @@ hbs.registerHelper('inc', function(value) {
 
 hbs.registerHelper('eq', function(a, b) {
   return a === b;
+});
+
+hbs.registerHelper('endsWith', function(str, suffix) {
+  if (typeof str !== 'string' || typeof suffix !== 'string') {
+    return false;
+  }
+  return str.endsWith(suffix);
+});
+
+// Register 'or' helper for logical OR operation
+hbs.registerHelper('or', function() {
+  const args = Array.prototype.slice.call(arguments, 0, -1);
+  return args.some(Boolean);
+});
+
+// Register helper to fix backslashes in paths to forward slashes
+hbs.registerHelper('fixPath', function(path) {
+  if (typeof path !== 'string') return path;
+  return path.replace(/\\/g, '/');
 });
 //define the database
 const db = mysql.createConnection({
