@@ -52,6 +52,36 @@
       </form>
     </div>
   </div>
+
+  {{#if examResults.length}}
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+      <h3>Your Exam Results</h3>
+      <table class="table table-striped table-bordered text-dark">
+        <thead>
+          <tr>
+            <th>Exam Name</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each examResults}}
+          <tr>
+            <td>{{this.examTitle}}</td>
+            <td>
+              {{#if this.passed}}
+                <span class="text-success fw-bold">Passed</span>
+              {{else}}
+                <span class="text-danger fw-bold">Failed</span>
+              {{/if}}
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{/if}}
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

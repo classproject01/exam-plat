@@ -2,6 +2,16 @@ const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
+const stringSimilarity = require('string-similarity');
+//taux de tolérance (ex : 10%) pour erreurs de frappe ou casse
+function isAnswerClose(studentAnswer, correctAnswer, tolerance = 0.1) {
+  if (!studentAnswer || !correctAnswer) return false;
+  const similarity = stringSimilarity.compareTwoStrings(
+    studentAnswer.trim().toLowerCase(),
+    correctAnswer.trim().toLowerCase()
+  );
+  return similarity >= tolerance;
+}
  
 //define the database
 const db = mysql.createConnection({
@@ -168,10 +178,10 @@ exports.signin = (req, res) => {
   };
   //Insert the exam to database
 exports.examcreate = (req, res) => {
-    const { title, duration, type, questions, option1, option2, option3, option4, correct } = req.body;
+    const { titre, duration, type, questions, option1, option2, option3, option4, correct } = req.body;
     const mediaFiles = req.files; // if using multer
 
-    db.query('INSERT INTO exams SET ?', { titre: title, type: type, teacher_id: req.user.id, duration: duration }, (err, examResult) => {
+    db.query('INSERT INTO exams SET ?', { titre: titre, type: type, teacher_id: req.user.id, duration: duration }, (err, examResult) => {
         if (err) { 
             console.log(err); 
             return res.send('DB error'); 
@@ -189,7 +199,7 @@ exports.examcreate = (req, res) => {
                 option_3: option3[i] || null,
                 option_4: option4[i] || null,
                 correct_answer: correct[i] || null,
-                media_path: mediaFiles[i] ? mediaFiles[i].path : ''
+                media_path: mediaFiles[i] ? '/uploads/' + mediaFiles[i].filename : ''
             });
         }
 
@@ -216,5 +226,46 @@ exports.submitExam = (req, res) => {
       return res.status(500).send('Server error');
     }
     res.send('Answers submitted successfully!');
+  });
+};
+exports.getStudentsByExam = (req, res) => {
+  const examId = req.params.examId;
+  const sql = `SELECT id, student_name FROM student_answers WHERE exam_id = ?`;
+
+  db.query(sql, [examId], (err, results) => {
+    if (err) return res.status(500).send('Server error');
+    res.render('students-list', { students: results, examId });
+  });
+};
+exports.getStudentResults = (req, res) => {
+  const { examId, studentId } = req.params;
+
+  const studentSql = `SELECT * FROM student_answers WHERE id = ? AND exam_id = ?`;
+  db.query(studentSql, [studentId, examId], (err, studentRows) => {
+    if (err || studentRows.length === 0) return res.status(404).send('Not found');
+
+    const studentAnswers = JSON.parse(studentRows[0].answers);
+
+    const questionSql = `SELECT id, question_text, correct_answer FROM questions WHERE exam_id = ?`;
+    db.query(questionSql, [examId], (err, questions) => {
+      if (err) return res.status(500).send('Server error');
+
+      const results = questions.map(q => {
+        const studentAnswer = studentAnswers[q.id] || 'No answer';
+        const isCorrect = isAnswerClose(studentAnswer, q.correct_answer); // fuzzy comparison
+
+        return {
+          question: q.question_text,
+          correct: q.correct_answer,
+          studentAnswer,
+          isCorrect
+        };
+      });
+
+      res.render('student-result', {
+        studentName: studentRows[0].student_name,
+        results
+      });
+    });
   });
 };

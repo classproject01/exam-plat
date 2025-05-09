@@ -17,9 +17,6 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="#">Home</a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link" href="/examcreate">Workspace</a>
         </li>
         
@@ -51,6 +48,11 @@
         </div>
         <div>
           <a href="{{this.shareLink}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Exam</a>
+          <a href="/exam/edit/{{this.id}}" class="btn btn-warning ms-2">Modify</a>
+          <a href="/student-list?examId={{this.id}}" class="btn btn-info ms-2">View Students</a>
+          <form action="/exam/delete/{{this.id}}" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-danger ms-2" onclick="return confirm('Are you sure you want to delete this exam?');">Delete</button>
+          </form>
         </div>
       </li>
     {{/each}}

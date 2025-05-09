@@ -30,23 +30,27 @@
   </div>
 </nav>
     <div class="container mt-5">
+  {{#if editMode}}
+  <h2>Edit Exam</h2>
+  <form action="/exam/edit/{{exam.id}}" method="POST" enctype="multipart/form-data">
+  {{else}}
   <h2>Create New Exam</h2>
-
   <form action="/auth/examcreate" method="POST" enctype="multipart/form-data">
+  {{/if}}
     <div class="mb-3">
       <label>Exam Title</label>
-      <input type="text" name="title" class="form-control" required>
+      <input type="text" name="titre" class="form-control" required value="{{#if editMode}}{{exam.titre}}{{/if}}">
     </div>
     <div class="mb-3">
       <label>Exam Duration(en minutes)</label>
-      <input type="number" name="duration" class="form-control" required>
+      <input type="number" name="duration" class="form-control" required value="{{#if editMode}}{{exam.duration}}{{/if}}">
     </div>
 
     <div class="mb-3">
       <label>Exam Type</label>
       <select name="type" class="form-select" required>
-        <option value="QCM">QCM (Multiple Choice)</option>
-        <option value="written">Written</option>
+        <option value="QCM" {{#if editMode}}{{#if (eq exam.type "QCM")}}selected{{/if}}{{/if}}>QCM (Multiple Choice)</option>
+        <option value="written" {{#if editMode}}{{#if (eq exam.type "written")}}selected{{/if}}{{/if}}>Written</option>
       </select>
     </div>
 
@@ -74,7 +78,7 @@
 
     <button type="button" class="btn btn-secondary my-2" onclick="addQuestion()">Add Another Question</button>
 
-    <button type="submit" class="btn btn-primary mt-3">Create Exam</button>
+    <button type="submit" class="btn btn-primary mt-3">{{#if editMode}}Update Exam{{else}}Create Exam{{/if}}</button>
   </form>
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

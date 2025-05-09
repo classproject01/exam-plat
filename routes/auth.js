@@ -13,6 +13,10 @@ router.post('/Slogin', authController.Slogin);
 router.post('/signin', authController.signin);
 router.post('/Slogout', authController.Slogout);
 router.post('/submit-exam/:examId', authController.submitExam);
+router.get('/exam/:examId/students', authController.getStudentsByExam);
+router.get('/exam/:examId/student/:studentId/results', authController.getStudentResults);
+
+
 // Change multer middleware to accept any file fields for debugging
 router.post('/examcreate', isAuthenticated, upload.any(), authController.examcreate);
 

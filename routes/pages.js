@@ -1,6 +1,31 @@
 const express = require('express');
 const router =  express.Router();
 const { isAuthenticated } = require('../middleware/auth');
+const stringSimilarity = require('string-similarity');
+const multer = require('multer');
+const path = require('path');
+
+// Configure multer storage for uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../uploads'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
+function isAnswerClose(studentAnswer, correctAnswer, tolerance = 0.9) {
+  if (!studentAnswer || !correctAnswer) return false;
+  const similarity = stringSimilarity.compareTwoStrings(
+    studentAnswer.trim().toLowerCase(),
+    correctAnswer.trim().toLowerCase()
+  );
+  return similarity >= tolerance;
+}
+
 //render the pages on the server
 router.get('/', (req, res) => {
   res.render('index');
@@ -29,9 +54,82 @@ router.get('/Tdashboard', isAuthenticated, (req, res) => {
   router.get('/examcreate', isAuthenticated, (req, res) => {
     res.render('examcreate', { user: req.user }); // Optional: use `req.user.id` to fetch user-specific info
   });
-router.get('/Sdashboard', isAuthenticated, (req, res) => {
-    res.render('Sdashboard', { studentName: req.user.prenom }); // Pass studentName to view
-  });
+const util = require('util');
+
+router.get('/Sdashboard', isAuthenticated, async (req, res) => {
+  const studentName = req.user.prenom;
+  const dbQuery = util.promisify(db.query).bind(db);
+
+  try {
+    // Fetch exams student took using student_name
+    const exams = await dbQuery(
+      `SELECT DISTINCT e.id AS exam_id, e.titre AS exam_title
+       FROM exams e
+       JOIN student_answers sa ON sa.exam_id = e.id
+       WHERE sa.student_name = ?`,
+      [studentName]
+    );
+
+    if (exams.length === 0) {
+      return res.render('Sdashboard', { studentName, examResults: [] });
+    }
+
+    const examResults = [];
+
+    for (const exam of exams) {
+      try {
+        const aResults = await dbQuery(
+          'SELECT answers FROM student_answers WHERE exam_id = ? AND student_name = ? LIMIT 1',
+          [exam.exam_id, studentName]
+        );
+
+        if (aResults.length === 0) {
+          examResults.push({ examTitle: exam.exam_title, passed: false });
+          continue;
+        }
+
+        const studentAnswers = JSON.parse(aResults[0].answers);
+
+        const questions = await dbQuery(
+          'SELECT id, correct_answer FROM questions WHERE exam_id = ?',
+          [exam.exam_id]
+        );
+
+        let correctCount = 0;
+        questions.forEach((q) => {
+          let studentAnswer = '';
+          if (Array.isArray(studentAnswers)) {
+            // If answers stored as array, use index
+            const index = questions.indexOf(q);
+            studentAnswer = (studentAnswers[index] || '').toString().trim().toLowerCase();
+          } else {
+            // If answers stored as object, use question id as key
+            studentAnswer = (studentAnswers[q.id.toString()] || '').toString().trim().toLowerCase();
+          }
+          const correctAnswer = (q.correct_answer || '').toString().trim().toLowerCase();
+          const isCorrect = isAnswerClose(studentAnswer, correctAnswer, 0.8);
+          console.log(`Question ID: ${q.id}, Student Answer: "${studentAnswer}", Correct Answer: "${correctAnswer}", Match: ${isCorrect}`);
+          if (isCorrect) {
+            correctCount++;
+          }
+        });
+
+        const passThreshold = 0.5; // 50%
+        const passed = (correctCount / questions.length) >= passThreshold;
+
+        examResults.push({ examTitle: exam.exam_title, passed });
+      } catch (innerErr) {
+        console.error('Error processing exam:', innerErr);
+        examResults.push({ examTitle: exam.exam_title, passed: false });
+      }
+    }
+
+    res.render('Sdashboard', { studentName, examResults });
+  } catch (err) {
+    console.error('Error fetching student exams:', err);
+    res.status(500).send('Server error');
+  }
+});
 
 router.get('/exam/:id', isAuthenticated, (req, res) => {
   const examId = req.params.id;
@@ -142,5 +240,154 @@ router.post('/submit-exam/:id', isAuthenticated, (req, res) => {
     res.redirect('/Sdashboard');
   });
 });
+router.get('/student-list', isAuthenticated, (req, res) => {
+  const examId = req.query.examId;
+  if (!examId) {
+    return res.status(400).send('Exam ID is required');
+  }
+  const query = 'SELECT DISTINCT student_name, id FROM student_answers WHERE exam_id = ?';
+  db.query(query, [examId], (err, results) => {
+    if (err) {
+      console.error('Error fetching students:', err);
+      return res.status(500).send('Server error');
+    }
+    res.render('student-list', { students: results, examId });
+  });
+});
+router.get('/student-result',isAuthenticated, (req, res) => {
+  res.render('student-result');
+});
+
+
+// Route to render exam edit form
+router.get('/exam/edit/:id', isAuthenticated, (req, res) => {
+  const examId = req.params.id;
+  const teacher = req.user;
+
+  db.query('SELECT * FROM exams WHERE id = ? AND teacher_id = ?', [examId, teacher.id], (err, results) => {
+    if (err) {
+      console.error('Error fetching exam for edit:', err);
+      return res.status(500).send('Server error');
+    }
+    if (results.length === 0) {
+      return res.status(404).send('Exam not found or unauthorized');
+    }
+    const exam = results[0];
+    res.render('examcreate', { exam, user: teacher, editMode: true });
+  });
+});
+
+// Route to handle exam update
+router.post('/exam/edit/:id', isAuthenticated, upload.array('media[]'), (req, res) => {
+  const examId = req.params.id;
+  const teacher = req.user;
+  const { titre, type, duration, questions, option1, option2, option3, option4, correct } = req.body;
+  const mediaFiles = req.files;
+
+  if (!titre || !type || !duration) {
+    return res.status(400).send('Missing required fields');
+  }
+
+  const updateExamQuery = 'UPDATE exams SET titre = ?, type = ?, duration = ? WHERE id = ? AND teacher_id = ?';
+  db.query(updateExamQuery, [titre, type, duration, examId, teacher.id], (err, result) => {
+    if (err) {
+      console.error('Error updating exam:', err);
+      return res.status(500).send('Server error');
+    }
+
+    // Delete existing questions for the exam
+    const deleteQuestionsQuery = 'DELETE FROM questions WHERE exam_id = ?';
+    db.query(deleteQuestionsQuery, [examId], (delErr, delResult) => {
+      if (delErr) {
+        console.error('Error deleting old questions:', delErr);
+        return res.status(500).send('Server error');
+      }
+
+      // Insert new questions
+      for (let i = 0; i < questions.length; i++) {
+        db.query('INSERT INTO questions SET ?', {
+          exam_id: examId,
+          question_text: questions[i],
+          option_1: option1[i] || null,
+          option_2: option2[i] || null,
+          option_3: option3[i] || null,
+          option_4: option4[i] || null,
+          correct_answer: correct[i] || null,
+          media_path: mediaFiles[i] ? '/uploads/' + mediaFiles[i].filename : ''
+        });
+      }
+
+      res.redirect('/Tdashboard');
+    });
+  });
+});
+
+// Route to handle exam deletion
+router.post('/exam/delete/:id', isAuthenticated, (req, res) => {
+  const examId = req.params.id;
+  const teacher = req.user;
+
+  const deleteQuery = 'DELETE FROM exams WHERE id = ? AND teacher_id = ?';
+  db.query(deleteQuery, [examId, teacher.id], (err, result) => {
+    if (err) {
+      console.error('Error deleting exam:', err);
+      return res.status(500).send('Server error');
+    }
+    res.redirect('/Tdashboard');
+  });
+});
+
+  
+// Route to view a student's results for a specific exam
+// Route to view a student's results for a specific exam
+router.get('/exam/:examId/student/:studentId/results', isAuthenticated, (req, res) => {
+  const { examId, studentId } = req.params;
+
+  const answersQuery = 'SELECT * FROM student_answers WHERE exam_id = ? AND id = ?';
+  const questionsQuery = 'SELECT * FROM questions WHERE exam_id = ?';
+
+  db.query(answersQuery, [examId, studentId], (err, answersResults) => {
+    if (err) {
+      console.error('Error fetching student answers:', err);
+      return res.status(500).send('Server error');
+    }
+    if (answersResults.length === 0) {
+      return res.status(404).send('Results not found');
+    }
+
+    const studentAnswers = JSON.parse(answersResults[0].answers);
+    const studentName = answersResults[0].student_name;
+
+    db.query(questionsQuery, [examId], (qErr, questionsResults) => {
+      if (qErr) {
+        console.error('Error fetching questions:', qErr);
+        return res.status(500).send('Server error');
+      }
+
+      const results = questionsResults.map((question, index) => {
+        let studentAnswer = '';
+
+        if (Array.isArray(studentAnswers)) {
+          studentAnswer = studentAnswers[index] || '';
+        } else {
+          studentAnswer = studentAnswers[question.id] || '';
+        }
+
+        const correct = question.correct_answer || '';
+        const isCorrect = isAnswerClose(studentAnswer, correct); // ✅ fuzzy match
+
+        return {
+          question: question.question_text || question.text || `Question ${index + 1}`,
+          studentAnswer,
+          correct,
+          isCorrect
+        };
+      });
+
+      res.render('student-result', { studentName, results });
+    });
+  });
+});
+
 
 module.exports = router;
