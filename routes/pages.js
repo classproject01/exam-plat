@@ -13,7 +13,9 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    // Ensure the original file extension is preserved
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
   }
 });
 const upload = multer({ storage: storage });
@@ -313,11 +315,13 @@ router.get('/exam/edit/:id', isAuthenticated, (req, res) => {
 });
 
 // Route to handle exam update
-router.post('/exam/edit/:id', isAuthenticated, upload.array('media[]'), (req, res) => {
+router.post('/exam/edit/:id', isAuthenticated, upload.any(), (req, res) => {
   const examId = req.params.id;
   const teacher = req.user;
   const { titre, type, duration, questions, option1, option2, option3, option4, correct } = req.body;
   const mediaFiles = req.files;
+
+  console.log('Uploaded files:', mediaFiles);
 
   if (!titre || !type || !duration) {
     return res.status(400).send('Missing required fields');
@@ -340,6 +344,15 @@ router.post('/exam/edit/:id', isAuthenticated, upload.array('media[]'), (req, re
 
       // Insert new questions
       for (let i = 0; i < questions.length; i++) {
+        // Since input name is 'media[]', all files have fieldname 'media[]'
+        // Assign files to questions by index
+        let mediaPath = '';
+        if (mediaFiles && mediaFiles.length > 0) {
+          const file = mediaFiles[i];
+          if (file) {
+            mediaPath = '/uploads/' + file.filename;
+          }
+        }
         db.query('INSERT INTO questions SET ?', {
           exam_id: examId,
           question_text: questions[i],
@@ -348,7 +361,7 @@ router.post('/exam/edit/:id', isAuthenticated, upload.array('media[]'), (req, re
           option_3: option3[i] || null,
           option_4: option4[i] || null,
           correct_answer: correct[i] || null,
-          media_path: mediaFiles[i] ? '/uploads/' + mediaFiles[i].filename : ''
+          media_path: mediaPath
         });
       }
 
