@@ -353,13 +353,23 @@ router.post('/exam/edit/:id', isAuthenticated, upload.any(), (req, res) => {
             mediaPath = '/uploads/' + file.filename;
           }
         }
+        // For written type, options can be empty strings instead of null to avoid DB errors
+        // Also ensure option arrays exist and have values to avoid undefined
+        const questionOptions = (type === 'written') ? {
+          option_1: '',
+          option_2: '',
+          option_3: '',
+          option_4: '',
+        } : {
+          option_1: (option1 && option1[i]) ? option1[i] : null,
+          option_2: (option2 && option2[i]) ? option2[i] : null,
+          option_3: (option3 && option3[i]) ? option3[i] : null,
+          option_4: (option4 && option4[i]) ? option4[i] : null,
+        };
         db.query('INSERT INTO questions SET ?', {
           exam_id: examId,
           question_text: questions[i],
-          option_1: option1[i] || null,
-          option_2: option2[i] || null,
-          option_3: option3[i] || null,
-          option_4: option4[i] || null,
+          ...questionOptions,
           correct_answer: correct[i] || null,
           media_path: mediaPath
         });
