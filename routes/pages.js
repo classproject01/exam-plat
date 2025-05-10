@@ -4,6 +4,7 @@ const { isAuthenticated } = require('../middleware/auth');
 const stringSimilarity = require('string-similarity');
 const multer = require('multer');
 const path = require('path');
+const fetch = require('node-fetch');
 
 // Configure multer storage for uploads
 const storage = multer.diskStorage({
@@ -84,7 +85,7 @@ router.get('/Sdashboard', isAuthenticated, async (req, res) => {
         );
 
         if (aResults.length === 0) {
-          examResults.push({ examTitle: exam.exam_title, passed: false });
+          examResults.push({ examTitle: exam.exam_title, passed: false, score: 0 });
           continue;
         }
 
@@ -116,11 +117,12 @@ router.get('/Sdashboard', isAuthenticated, async (req, res) => {
 
         const passThreshold = 0.5; // 50%
         const passed = (correctCount / questions.length) >= passThreshold;
+        const score = Math.round((correctCount / questions.length) * 100);
 
-        examResults.push({ examTitle: exam.exam_title, passed });
+        examResults.push({ examTitle: exam.exam_title, passed, score });
       } catch (innerErr) {
         console.error('Error processing exam:', innerErr);
-        examResults.push({ examTitle: exam.exam_title, passed: false });
+        examResults.push({ examTitle: exam.exam_title, passed: false, score: 0 });
       }
     }
 
@@ -131,7 +133,7 @@ router.get('/Sdashboard', isAuthenticated, async (req, res) => {
   }
 });
 
-router.get('/exam/:id', isAuthenticated, (req, res) => {
+  router.get('/exam/:id', isAuthenticated, (req, res) => {
   const examId = req.params.id;
   console.log('User in GET /exam/:id:', req.user);
   const studentName = req.user.prenom;
@@ -160,6 +162,11 @@ router.get('/exam/:id', isAuthenticated, (req, res) => {
       }
 
       console.log(`Fetched ${questions.length} questions for exam id ${examId}`);
+
+      // Log media_path for debugging
+      questions.forEach(q => {
+        console.log(`Question ID: ${q.id}, media_path: ${q.media_path}`);
+      });
 
       res.render('exam_take', { exam, questions, studentName });
     });
@@ -215,7 +222,7 @@ router.get('/search-exam', isAuthenticated, (req, res) => {
 
  
 
-router.post('/submit-exam/:id', isAuthenticated, (req, res) => {
+router.post('/submit-exam/:id', isAuthenticated, async (req, res) => {
   console.log('User object:', req.user);
   const examId = req.params.id;
   const studentName = req.body.studentName;
@@ -231,8 +238,37 @@ router.post('/submit-exam/:id', isAuthenticated, (req, res) => {
 
   const answersJson = JSON.stringify(answers);
 
-  const query = 'INSERT INTO student_answers (student_name, exam_id, answers) VALUES (?, ?, ?)';
-  db.query(query, [studentName, examId, answersJson], (err, result) => {
+  // Get client IP address for location
+  let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || (req.connection.socket ? req.connection.socket.remoteAddress : null);
+  if (ip && ip.includes(',')) {
+    ip = ip.split(',')[0].trim();
+  }
+
+  // Default location to IP if geolocation fails
+  let location = ip;
+
+  // Handle localhost IPs for local testing
+  if (ip === '::1' || ip === '127.0.0.1') {
+    location = 'Localhost (Development)';
+  } else {
+    try {
+      // Call IP geolocation API
+      const response = await fetch(`https://ipapi.co/${ip}/json/`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.city && data.country_name) {
+          location = `${data.city}, ${data.country_name}`;
+        } else if (data.country_name) {
+          location = data.country_name;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching geolocation:', error);
+    }
+  }
+
+  const query = 'INSERT INTO student_answers (student_name, exam_id, answers, location) VALUES (?, ?, ?, ?)';
+  db.query(query, [studentName, examId, answersJson, location], (err, result) => {
     if (err) {
       console.error('Error inserting answers:', err);
       return res.status(500).send('Error saving answers');
@@ -269,8 +305,7 @@ router.get('/exam/edit/:id', isAuthenticated, (req, res) => {
       console.error('Error fetching exam for edit:', err);
       return res.status(500).send('Server error');
     }
-    if (results.length === 0) {
-      return res.status(404).send('Exam not found or unauthorized');
+    if (results.length === 0) {      return res.status(404).send('Exam not found or unauthorized');
     }
     const exam = results[0];
     res.render('examcreate', { exam, user: teacher, editMode: true });
